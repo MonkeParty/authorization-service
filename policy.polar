@@ -9,9 +9,12 @@ resource Application {
     ];
 }
 
+resource Bool {}
+
 resource Movie {
     relations = {
-        app: Application
+        app: Application,
+        is_free: Bool
     };
 
     roles = [
@@ -30,13 +33,22 @@ resource Movie {
     ];
 }
 
+
+# TODO: add a condition that a movie should be marked free in order to watch as anonymous/user
 # anonymous
 allow(actor: Actor, "view-partial", movie: Movie) if
+    is_free matches Bool and
+    has_relation(movie, "is_free", is_free) and
     has_role(actor, "anonymous", movie);
+
+has_role(_: Actor, "anonymous", _: Movie) if
+    true;
 
 
 # user
 allow(actor: Actor, "view-partial", movie: Movie) if
+    is_free matches Bool and
+    has_relation(movie, "is_free", is_free) and
     has_role(actor, "user", movie);
 
 allow(actor: Actor, "comment", movie: Movie) if
