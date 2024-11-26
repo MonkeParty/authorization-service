@@ -1,37 +1,87 @@
-actor Actor {}
+actor User {}
 
-resource OnlineCinema {
-    roles = ["user", "admin"];
-    permissions = ["view", "edit"];
-
-    "view" if "user";
-    "user" if "admin";
-    "edit" if "admin";
-}
-
-resource Movie {
+resource Application {
     roles = [
-        "unauthenticated",
+        "anonymous",
         "user",
         "paid-user",
         "admin"
     ];
+}
+
+resource Movie {
+    relations = {
+        app: Application
+    };
+
+    roles = [
+        "anonymous",
+        "user",
+        "paid-user",
+        "admin"
+    ];
+
     permissions = [
+        "view-partial",
         "view",
         "comment",
         "rate",
         "edit"
     ];
-    relations = {
-        movie_container: OnlineCinema
-    };
-
-    "view" if "user";
-    "rate" if "user";
-    "comment" if "user";
-
-    "user" if "paid-user";
-
-    "paid-user" if "admin";
-    "edit" if "admin";
 }
+
+# anonymous
+allow(actor: Actor, "view-partial", movie: Movie) if
+    has_role(actor, "anonymous", movie);
+
+
+# user
+allow(actor: Actor, "view-partial", movie: Movie) if
+    has_role(actor, "user", movie);
+
+allow(actor: Actor, "comment", movie: Movie) if
+    has_role(actor, "user", movie);
+
+allow(actor: Actor, "rate", movie: Movie) if
+    has_role(actor, "user", movie);
+
+
+# paid-user
+allow(actor: Actor, "view", movie: Movie) if
+    has_role(actor, "paid-user", movie);
+
+has_role(actor: Actor, "user", movie: Movie) if
+    has_role(actor, "paid-user", movie);
+
+
+# admin
+allow(actor: Actor, "edit", movie: Movie) if
+    has_role(actor, "admin", movie);
+
+has_role(actor: Actor, "paid-user", movie: Movie) if
+    has_role(actor, "admin", movie);
+
+
+# singleton application roles
+has_role(actor: Actor, "anonymous", movie: Movie) if
+    app matches Application and
+    has_role(actor, "anonymous", app) and
+    has_relation(movie, "app", app);
+
+has_role(actor: Actor, "user", movie: Movie) if
+    app matches Application and
+    has_role(actor, "user", app) and
+    has_relation(movie, "app", app);
+
+has_role(actor: Actor, "paid-user", movie: Movie) if
+    app matches Application and
+    has_role(actor, "paid-user", app) and
+    has_relation(movie, "app", app);
+
+has_role(actor: Actor, "admin", movie: Movie) if
+    app matches Application and
+    has_role(actor, "admin", app) and
+    has_relation(movie, "app", app);
+
+has_relation(_: Movie, "app", _: Application) if
+    true;
