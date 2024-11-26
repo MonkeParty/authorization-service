@@ -35,6 +35,7 @@ resource Movie {
 
 
 # TODO: add a condition that a movie should be marked free in order to watch as anonymous/user
+# https://www.osohq.com/docs/modeling-in-polar/field-level-authorization/fields-as-resources
 # anonymous
 allow(actor: Actor, "view-partial", movie: Movie) if
     is_free matches Bool and
