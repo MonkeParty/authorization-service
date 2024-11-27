@@ -1,4 +1,4 @@
-actor System {}
+# actor System {}
 
 actor User {}
 
@@ -19,8 +19,8 @@ resource Movie {
     };
 
     roles = [
-        # system roles
-        "free-movie",
+        # # system roles
+        # "free-movie",
         # user roles
         "anonymous",
         "user",
@@ -29,7 +29,6 @@ resource Movie {
     ];
 
     permissions = [
-        "view-partial",
         "view",
         "comment",
         "rate",
@@ -37,24 +36,21 @@ resource Movie {
     ];
 }
 
-# generic
-allow(actor: Actor, "view", movie: Movie) if
-    allow(actor, "view-partial", movie);
-
 
 # anonymous
 has_role(_: Actor, "anonymous", _: Movie) if
     true;
 
-allow(actor: Actor, "view-partial", movie: Movie) if
-    has_role(actor, "anonymous", movie) and
-    has_role(_, "free-movie", movie);
+
+allow(actor: Actor, "view", movie: Movie) if
+    is_free(movie, true) and
+    has_role(actor, "anonymous", movie);
 
 
 # user
-allow(actor: Actor, "view-partial", movie: Movie) if
-    has_role(actor, "user", movie) and
-    has_role(_, "free-movie", movie);
+allow(actor: Actor, "view", movie: Movie) if
+    is_free(movie, true) and
+    has_role(actor, "user", movie);
 
 
 # paid-user

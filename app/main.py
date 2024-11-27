@@ -73,7 +73,7 @@ async def check_user_action_on_movie(action: str, user_id: int, movie_id: int):
 # TODO: move all setters to reading a message queue (kafka)
 @app.post('/set-movie-as-free/{movie_id}')
 async def set_movie_as_free(movie_id: int):
-    oso.insert(('has_role', oso_system, 'free-movie', Movie(id=movie_id)))
+    oso.insert(('is_free', Movie(id=movie_id), True))
 
 @app.post('/set-user-role/{user_id}/{role}')
 async def set_user_role(user_id: int, role: str):
