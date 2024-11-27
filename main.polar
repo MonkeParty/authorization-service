@@ -36,7 +36,6 @@ resource Movie {
 has_role(_: Actor, "anonymous", _: Movie) if
     true;
 
-
 allow(actor: Actor, "view", movie: Movie) if
     is_free(movie, true) and
     has_role(actor, "anonymous", movie);

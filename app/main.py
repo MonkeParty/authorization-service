@@ -26,14 +26,13 @@ settings = Settings()
 
 
 oso = Oso(url='https://cloud.osohq.com', api_key=settings.oso_cloud_api_key)
-oso_system = System()
 oso_application = Application()
 
 
 def push_policy_to_cloud(oso: Oso, policy_path: str):
     oso.policy(open(policy_path, 'r').read())
 
-push_policy_to_cloud(oso, './policy.polar')
+push_policy_to_cloud(oso, './main.polar')
 
 
 nl = '\n' # a hack to insert backslashes in f-strings
