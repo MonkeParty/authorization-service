@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+from app.model.actions import actions
 from app.model.system import System
 from app.model.user import User
 from app.model.application import Application
@@ -34,24 +35,39 @@ def push_policy_to_cloud(oso: Oso, policy_path: str):
 push_policy_to_cloud(oso, './policy.polar')
 
 
+nl = '\n' # a hack to insert backslashes in f-strings
+description = f'''
+Service for authorization
 
-app = FastAPI()
+Send a request to `/can-user-{{action}}-movie/{{user_id}}/{{movie_id}}` to check if user with
+`user_id` can perform an action on movie with `movie_id`
+
+`action` list:
+{''.join(map(lambda action: f'- {action}{nl}', actions))}
+
+## DEV
+
+> This portion of a service will later read a message queue for role setting and movie adding
+
+Right now you can add a role to a user with `user_id` at `/set-user-role/{{user_id}}/{{role}}`
+
+`role` list:
+{''.join(map(lambda role: f'- {role}{nl}', roles))}
+'''
+
+app = FastAPI(
+    title='Authorization Service',
+    description=description,
+)
 
 
-@app.get('/can-user-view-movie/{user_id}/{movie_id}')
-async def can_user_view_movie(user_id: int, movie_id: int):
-    can_view = oso.authorize(User(id=user_id), 'view', Movie(id=movie_id))
-    if can_view: return
+@app.get('/can-user-{action}-movie/{user_id}/{movie_id}')
+async def check_user_action_on_movie(action: str, user_id: int, movie_id: int):
+    if not action in actions: raise ActionNotFoundException
 
-    can_view_for_free = oso.authorize(User(id=user_id), 'view-partial', Movie(id=movie_id))
-    if not can_view_for_free:
-        raise ForbiddenException
+    authorize = oso.authorize(User(id=user_id), action, Movie(id=movie_id))
+    if not authorize: raise ForbiddenException
 
-@app.get('/can-user-edit-movie/{user_id}/{movie_id}')
-async def can_user_edit_movie(user_id: int, movie_id: int):
-    can_edit = oso.authorize(User(id=user_id), 'edit', Movie(id=movie_id))
-    if not can_edit:
-        raise ForbiddenException
 
 
 # TODO: move all setters to reading a message queue (kafka)
@@ -61,7 +77,5 @@ async def set_movie_as_free(movie_id: int):
 
 @app.post('/set-user-role/{user_id}/{role}')
 async def set_user_role(user_id: int, role: str):
-    print(role, roles)
-    if role not in roles:
-        raise RoleNotFoundException
+    if role not in roles: raise RoleNotFoundException
     oso.insert(('has_role', User(id=user_id), role, oso_application))
