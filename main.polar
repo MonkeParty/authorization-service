@@ -9,8 +9,6 @@ resource Application {
     ];
 }
 
-resource Bool {}
-
 resource Movie {
     relations = {
         app: Application,
