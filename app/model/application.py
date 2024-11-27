@@ -1,3 +1,3 @@
 class Application:
-    id: int = 0
+    id: str = 'main'
     type: str = 'Application'
