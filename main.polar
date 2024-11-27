@@ -1,5 +1,3 @@
-# actor System {}
-
 actor User {}
 
 resource Application {
@@ -19,9 +17,6 @@ resource Movie {
     };
 
     roles = [
-        # # system roles
-        # "free-movie",
-        # user roles
         "anonymous",
         "user",
         "paid-user",

@@ -6,12 +6,13 @@ from fastapi import FastAPI
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-from app.model.actions import actions
-from app.model.system import System
 from app.model.user import User
 from app.model.application import Application
 from app.model.movie import Movie
+
+from app.model.actions import actions
 from app.model.roles import roles
+
 from app.exceptions import *
 
 
