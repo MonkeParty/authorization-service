@@ -64,7 +64,6 @@ app = FastAPI(
 @app.get('/can-user-{action}-movie/{user_id}/{movie_id}')
 async def check_user_action_on_movie(action: str, user_id: int, movie_id: int):
     if not action in actions: raise ActionNotFoundException
-
     authorize = oso.authorize(User(id=user_id), action, Movie(id=movie_id))
     if not authorize: raise ForbiddenException
 
