@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     oso_cloud_api_key: str
     kafka_bootstrap_server: str
+    event_bus_topic_name: str
 
 
 settings = Settings()
@@ -93,11 +94,12 @@ Send a request to `/can-user-{{action}}-movie/{{user_id}}/{{movie_id}}` to check
 `action` list:
 {''.join(map(lambda action: f'- {action}{nl}', actions))}
 
-## DEV
+The service is reading *"events"* from a topic `{settings.event_bus_topic_name}` for setting user roles and changing movie freeness
 
-> This portion of a service will later read a message queue for role setting and movie adding
-
-Right now you can add a role to a user with `user_id` at `/set-user-role/{{user_id}}/{{role}}`
+`event` list:
+- `smfr {{movie_id}}` - set movie with `movie_id` free
+- `smpa {{movie_id}}` - set movie with `movie_id` paid
+- `suro {{user_id}} {{role_name}}` - set user with `user_id` role `role_name`
 
 `role` list:
 {''.join(map(lambda role: f'- {role}{nl}', roles))}
@@ -121,7 +123,7 @@ eq = Queue()
 
 kafka_event_reader = KafkaEventReader(
     KafkaConsumer(
-        'event_bus',
+        settings.event_bus_topic_name,
         bootstrap_servers=settings.kafka_bootstrap_server,
         auto_offset_reset='latest',
     ),
