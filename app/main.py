@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=Path.cwd()/'.env', env_file_encoding='utf-8')
 
     oso_cloud_api_key: str
+    kafka_bootstrap_server: str
 
 
 settings = Settings()
@@ -28,11 +29,58 @@ settings = Settings()
 oso = Oso(url='https://cloud.osohq.com', api_key=settings.oso_cloud_api_key)
 oso_application = Application()
 
-
 def push_policy_to_cloud(oso: Oso, policy_path: str):
     oso.policy(open(policy_path, 'r').read())
 
 push_policy_to_cloud(oso, './main.polar')
+
+
+
+from threading import Thread
+from queue import Queue
+
+from kafka import KafkaConsumer
+
+from app.events import Event, Microservice, EventType
+from app.kafka_reader import KafkaEventReader
+
+
+
+class EventReader(Microservice):
+    '''
+    '''
+
+    def __init__(self, event_queue: Queue):
+        return super().__init__(event_queue)
+
+    def handle_event(self, event: Event):
+        '''
+        Обработка ивентов
+        '''
+        target_function = None
+
+        match event.type:
+            case EventType.SetMovieFree:
+                target_function = self.handle_event_set_movie_free
+            case EventType.SetMoviePaid:
+                target_function = self.handle_event_set_movie_paid
+            case EventType.SetUserRole:
+                target_function = self.handle_event_set_user_role
+            case _:
+                pass
+
+        if target_function is not None:
+            Thread(target=target_function, args=event.data).start()
+
+    def handle_event_set_movie_free(self, movie_id: int):
+        oso.insert(('is_free', Movie(id=movie_id), True))
+    
+    def handle_event_set_movie_paid(self, movie_id: int):
+        oso.delete(('is_free', Movie(id=movie_id), True))
+
+    def handle_event_set_user_role(self, user_id: int, role: str):
+        if role not in roles: raise RoleNotFoundException
+        oso.insert(('has_role', User(id=user_id), role, oso_application))
 
 
 nl = '\n' # a hack to insert backslashes in f-strings
@@ -69,12 +117,17 @@ async def check_user_action_on_movie(action: str, user_id: int, movie_id: int):
 
 
 
-# TODO: move all setters to reading a message queue (kafka)
-@app.post('/set-movie-as-free/{movie_id}')
-async def set_movie_as_free(movie_id: int):
-    oso.insert(('is_free', Movie(id=movie_id), True))
+eq = Queue()
 
-@app.post('/set-user-role/{user_id}/{role}')
-async def set_user_role(user_id: int, role: str):
-    if role not in roles: raise RoleNotFoundException
-    oso.insert(('has_role', User(id=user_id), role, oso_application))
+kafka_event_reader = KafkaEventReader(
+    KafkaConsumer(
+        'event_bus',
+        bootstrap_servers=settings.kafka_bootstrap_server,
+        auto_offset_reset='latest',
+    ),
+    eq
+)
+
+event_reader = EventReader(eq)
+
+# event_reader.running_thread.join()
