@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 COPY ./app /app
 
 # Command to run the application with automatic reload
-CMD ["/bin/sh", "-c", "uvicorn main:app --reload --host ${HOST} --port ${PORT} --proxy-headers"]
+CMD ["/bin/sh", "-c", "uvicorn main:app --reload --host ${HOST} --port ${PORT} --proxy-headers --reload"]
