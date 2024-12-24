@@ -119,7 +119,7 @@ async def check_user_action_on_movie(action: str, user_id: int, movie_id: int):
 
 @app.get('/{id}/is_admin')
 async def is_user_admin(id: int):
-    if not oso.authorize(User(id=id), 'edit', Movie(id=0)): raise ForbiddenException
+    if not oso.get(('has_role', User(id=id), 'admin', oso_application)): raise ForbiddenException
 
 eq = Queue()
 
